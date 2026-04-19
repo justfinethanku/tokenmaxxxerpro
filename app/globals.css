@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+:root {
+  --background: #06080d;
+  --foreground: #f6f0e7;
+  --muted: #8a95a5;
+  --panel: rgba(12, 18, 27, 0.82);
+  --panel-strong: rgba(13, 22, 31, 0.96);
+  --line: rgba(246, 240, 231, 0.1);
+  --line-strong: rgba(246, 240, 231, 0.18);
+  --accent: #d2ff48;
+  --accent-muted: rgba(210, 255, 72, 0.12);
+  --danger: #ff6a62;
+  --shadow: 0 32px 120px rgba(0, 0, 0, 0.34);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-panel: var(--panel);
+  --color-panel-strong: var(--panel-strong);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-muted: var(--accent-muted);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, rgba(210, 255, 72, 0.14), transparent 34%),
+    radial-gradient(circle at 82% 18%, rgba(255, 106, 98, 0.18), transparent 22%),
+    linear-gradient(180deg, #0a1017 0%, #06080d 46%, #05070b 100%);
+}
+
+body {
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), sans-serif;
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(246, 240, 231, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(246, 240, 231, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, rgba(210, 255, 72, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(8, 12, 18, 0) 0%, rgba(8, 12, 18, 0.34) 100%);
+  mix-blend-mode: screen;
+  opacity: 0.65;
+}
+
+::selection {
+  background: rgba(210, 255, 72, 0.28);
+  color: #04110a;
+}
+
+a,
+button,
+input,
+textarea {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    opacity 180ms ease;
+}
+
+.panel-shadow {
+  box-shadow: var(--shadow);
+}
+
+.grain {
+  position: relative;
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.014) 50%, transparent 50%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 50%, transparent 50%);
+  background-size: 3px 3px;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(246, 240, 231, 0.18);
+  border-radius: 999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
