@@ -34,7 +34,7 @@ function readErrorMessage(error: unknown): string {
     return error;
   }
 
-  return "PayPal checkout failed before the protocol could be issued.";
+  return "Enrollment could not be completed before issuance.";
 }
 
 export function PayPalCheckout({
@@ -55,14 +55,14 @@ export function PayPalCheckout({
 
   if (!clientId) {
     return (
-      <div className="rounded-[28px] border border-danger/40 bg-danger/10 p-5 text-sm text-foreground/80">
+      <div className="rounded-[24px] border border-danger/35 bg-danger/10 p-5 text-sm leading-6 text-foreground/82">
         PayPal client configuration is missing. Add
         {" "}
-        <code className="font-mono text-[12px] text-accent">
+        <code className="font-mono text-[12px] text-accent-ember">
           NEXT_PUBLIC_PAYPAL_CLIENT_ID
         </code>
         {" "}
-        to render checkout.
+        to render enrollment.
       </div>
     );
   }
@@ -74,29 +74,28 @@ export function PayPalCheckout({
       environment={environment}
       pageType="checkout"
     >
-      <div className="space-y-3 rounded-[28px] border border-line-strong bg-panel p-4">
-        <div className="flex items-center justify-between gap-4">
+      <div className="space-y-5 rounded-[28px] border border-line bg-black/16 p-5">
+        <div className="flex items-start justify-between gap-4 border-b border-line pb-5">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-muted">
-              PayPal Checkout
-            </p>
-            <p className="mt-2 text-sm text-foreground/76">
+            <p className="eyebrow text-muted">PayPal Enrollment</p>
+            <h3 className="mt-3 font-display text-[1.8rem] leading-none tracking-[-0.04em] text-foreground">
               {tier.name}
-              {" "}
-              is fulfilled immediately after payment capture.
+            </h3>
+            <p className="mt-3 max-w-xs text-sm leading-6 text-foreground/66">
+              Payment capture triggers immediate issuance of the dossier on this
+              page.
             </p>
           </div>
+
           <div className="text-right">
-            <p className="text-lg font-semibold text-accent">{tier.priceLabel}</p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-muted">
-              PDF delivery
+            <p className="font-display text-[2rem] leading-none tracking-[-0.04em] text-accent-ember tabular-nums">
+              {tier.priceLabel}
             </p>
+            <p className="mt-2 eyebrow text-muted">Immediate delivery</p>
           </div>
         </div>
 
-        <div
-          className={disabled ? "pointer-events-none opacity-45" : undefined}
-        >
+        <div className={disabled ? "pointer-events-none opacity-45" : undefined}>
           <PayPalOneTimePaymentButton
             createOrder={async () => {
               const response = await fetch("/api/paypal/create-order", {
@@ -114,7 +113,7 @@ export function PayPalCheckout({
 
               if (!response.ok || !json.orderId) {
                 throw new Error(
-                  json.error ?? "Unable to create a PayPal order for this tier.",
+                  json.error ?? "Unable to create a PayPal order for this class.",
                 );
               }
 
@@ -157,7 +156,7 @@ export function PayPalCheckout({
                   !json.downloadUrl
                 ) {
                   throw new Error(
-                    json.error ?? "Payment captured, but fulfillment failed.",
+                    json.error ?? "Payment captured, but issuance failed.",
                   );
                 }
 
@@ -176,9 +175,7 @@ export function PayPalCheckout({
             }}
             onCancel={() => {
               setIsCapturing(false);
-              onError(
-                "Checkout was canceled before the token burn protocol could be sealed.",
-              );
+              onError("Enrollment was closed before payment capture.");
             }}
             onError={(error) => {
               setIsCapturing(false);
@@ -189,10 +186,9 @@ export function PayPalCheckout({
           />
         </div>
 
-        <p className="text-xs leading-6 text-foreground/60">
-          PayPal processes the payment. TokenMaxxerPro delivers the PDF. Any
-          actual token destruction happens on your own AI account, as nature
-          intended.
+        <p className="text-xs leading-6 text-foreground/56">
+          Payment is processed by PayPal. TokenMaxxerPro issues the protocol
+          PDF. Compute usage remains entirely on the operator&apos;s account.
         </p>
       </div>
     </PayPalProvider>

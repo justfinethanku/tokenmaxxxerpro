@@ -4,6 +4,8 @@ export type Tier = {
   id: TierId;
   name: string;
   eyebrow: string;
+  artifactCount: number;
+  enrollmentNote?: string;
   price: number;
   priceLabel: string;
   targetLabel: string;
@@ -15,61 +17,68 @@ export type Tier = {
 };
 
 export const DEFAULT_TASK =
-  "Design an email responder workflow for creators who want every incoming message treated like a board-level event.";
+  "Draft an email responder workflow that treats every incoming message as a board-level event requiring layered review.";
 
 export const TIERS: Tier[] = [
   {
     id: "free",
-    name: "Starter Burn",
-    eyebrow: "Tastefully irresponsible",
+    name: "Aperture",
+    eyebrow: "Initial Access",
+    artifactCount: 4,
     price: 0,
     priceLabel: "Free",
-    targetLabel: "30k-80k tokens per run",
-    runtimeLabel: "Single-session protocol",
+    targetLabel: "50k target burn",
+    runtimeLabel: "One-time prompt",
     description:
-      "A controlled first exposure to overbuilt prompting, delivered as a clean PDF protocol.",
-    callout: "Includes a structured prompt, artifact checklist, and burn receipt framing.",
+      "A starter PDF that turns one simple task into a needlessly heavy AI workflow.",
+    callout:
+      "Signed PDF with the main prompt, review steps, and burn framing.",
     paymentRequired: false,
     deliverables: [
-      "Prompt PDF",
-      "Artifact checklist",
-      "Token burn receipt",
+      "Main prompt",
+      "Review checklist",
+      "Burn receipt",
     ],
   },
   {
     id: "sprint",
-    name: "500K Sprint",
-    eyebrow: "Professional waste acceleration",
+    name: "Ascent",
+    eyebrow: "Session Acceleration",
+    artifactCount: 7,
     price: 10,
     priceLabel: "$10",
-    targetLabel: "300k-700k tokens in one session",
-    runtimeLabel: "Escalation protocol",
+    targetLabel: "500k session target",
+    runtimeLabel: "One-session run",
     description:
-      "Turns one tiny request into a multi-phase burn event with expansion, review, arbitration, and executive recap layers.",
-    callout: "Designed for one dramatic, visible reasoning incident.",
+      "A heavier prompt that adds fake specialists, review passes, and disagreement around one task.",
+    callout:
+      "Built to burn about 500k tokens in a single run.",
     paymentRequired: true,
     deliverables: [
-      "Master protocol PDF",
-      "Swarm role map",
-      "Review and dissent loops",
+      "Main prompt",
+      "Agent map",
+      "Review log",
     ],
   },
   {
     id: "pro",
-    name: "Token Maxxer Pro",
-    eyebrow: "Continuous burn infrastructure",
+    name: "Sovereign",
+    eyebrow: "Continuous Enrollment",
+    artifactCount: 9,
+    enrollmentNote: "By enrollment",
     price: 50,
     priceLabel: "$50",
-    targetLabel: "Up to ~500k tokens per hour",
-    runtimeLabel: "Looping operating system",
+    targetLabel: "~500k per hour",
+    runtimeLabel: "Hourly loop",
     description:
-      "A recursive protocol stack for operators who believe the model should never be allowed to stop touching the task.",
-    callout: "Designed for sustained throughput, ritualized verification, and procedural excess.",
+      "A looping prompt that keeps the model reviewing, rewriting, auditing, and handing work back to itself.",
+    callout:
+      "Built for repeated hourly runs with clear loop instructions.",
     paymentRequired: true,
     deliverables: [
-      "Flagship protocol PDF",
-      "Hourly loop architecture",
-      "Governance and audit cadence",
+      "Main prompt",
+      "Hourly loop",
+      "Audit cadence",
     ],
   },
 ];

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { Fraunces, IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -13,17 +14,23 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://tokenmaxxerpro.com"),
-  title: "TokenMaxxerPro | Brand New Technology for Extraordinary Token Consumption",
+  title: "tokenMAxXxERpro | Protocol Dossiers for Extraordinary Token Burn",
   description:
-    "Real token burn protocols for professionals who believe no request should survive first contact with orchestration.",
+    "Structured PDF dossiers for operators who want ordinary tasks processed with maximum procedural heat.",
   openGraph: {
-    title: "TokenMaxxerPro",
+    title: "tokenMAxXxERpro",
     description:
-      "Convert tiny prompts into wildly overbuilt token burn protocols, delivered as polished PDFs.",
+      "Structured protocol dossiers for operators pursuing disciplined, visible, and unnecessary token burn.",
     url: "https://tokenmaxxerpro.com",
-    siteName: "TokenMaxxerPro",
+    siteName: "tokenMAxXxERpro",
     type: "website",
   },
 };
@@ -36,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${instrumentSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         {children}
