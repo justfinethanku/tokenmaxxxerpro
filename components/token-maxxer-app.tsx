@@ -3,7 +3,6 @@
 import {
   startTransition,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -19,8 +18,8 @@ import {
   getTierById,
   normalizeOperator,
   normalizeTask,
-  type Tier,
   type TierId,
+  type Tier,
 } from "@/lib/products";
 import {
   PayPalCheckout,
@@ -33,12 +32,6 @@ type DownloadState = {
   headline: string;
   receipt?: string;
   tierName: string;
-};
-
-type Feature = {
-  detail: string;
-  label: string;
-  summary: string;
 };
 
 type PointerState = {
@@ -232,67 +225,6 @@ function buildArtifactPreview(tierId: TierId, task: string): string[] {
   }
 }
 
-function buildFeatureSet(tier: Tier): Feature[] {
-  switch (tier.id) {
-    case "free":
-      return [
-        {
-          detail: "Core brief",
-          label: "Protocol Dossier",
-          summary: "Your task rewritten into a paste-ready prompt with extra structure and extra steps.",
-        },
-        {
-          detail: "Oversight",
-          label: "Verification Layer",
-          summary: "A review pass and checklist that stop the model from giving a quick clean answer.",
-        },
-        {
-          detail: "Operator record",
-          label: "Burn Receipt",
-          summary: "A signed PDF page that makes the whole thing look official.",
-        },
-      ];
-    case "sprint":
-      return [
-        {
-          detail: "Escalation",
-          label: "Protocol Dossier",
-          summary: "The task becomes a five-stage prompt with handoffs, reviews, and forced extra work.",
-        },
-        {
-          detail: "Specialists",
-          label: "Review Topology",
-          summary: "Fake specialist roles, disagreement loops, and review rules turn one task into a full session.",
-        },
-        {
-          detail: "Session record",
-          label: "Dissent Archive",
-          summary: "You get a paper trail of objections, findings, and the final version.",
-        },
-      ];
-    case "pro":
-      return [
-        {
-          detail: "Loop system",
-          label: "Protocol Dossier",
-          summary: "A looping prompt designed to keep the model busy on the same task hour after hour.",
-        },
-        {
-          detail: "Governance",
-          label: "Oversight Cadence",
-          summary: "Audit, counter-audit, extraction, and review keep repeating on purpose.",
-        },
-        {
-          detail: "Continuation",
-          label: "Operator Ledger",
-          summary: "Each cycle tracks how much work was created and how to start the next round.",
-        },
-      ];
-    default:
-      return [];
-  }
-}
-
 function Metric({
   label,
   value,
@@ -304,30 +236,6 @@ function Metric({
     <div className="sub-card rounded-[18px] p-4">
       <p className="eyebrow text-muted">{label}</p>
       <p className="mt-3 text-sm leading-6 text-foreground/74">{value}</p>
-    </div>
-  );
-}
-
-function IconTile({ index }: { index: number }) {
-  return (
-    <div className="gem-tile">
-      <span className="gem-tile__facet gem-tile__facet--one" />
-      <span className="gem-tile__facet gem-tile__facet--two" />
-      <span
-        className="gem-tile__core"
-        style={{
-          height: 18,
-          left: index === 1 ? 10 : 16,
-          top: index === 2 ? 16 : 12,
-          width: 18,
-        }}
-      />
-      <span
-        className="gem-tile__spark"
-        style={{
-          animationDelay: `${index * 1.2}s`,
-        }}
-      />
     </div>
   );
 }
@@ -601,10 +509,9 @@ function EnrollmentModal({
 
 export function TokenMaxxerApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const tierSectionRef = useRef<HTMLElement | null>(null);
   const [task, setTask] = useState(DEFAULT_TASK);
   const [operator, setOperator] = useState("");
-  const [selectedTierId, setSelectedTierId] = useState<TierId>("free");
+  const [selectedTierId, setSelectedTierId] = useState<TierId | null>(null);
   const [downloadState, setDownloadState] = useState<DownloadState | null>(null);
   const [modalDownloadState, setModalDownloadState] =
     useState<DownloadState | null>(null);
@@ -614,38 +521,45 @@ export function TokenMaxxerApp() {
 
   const normalizedTask = normalizeTask(task);
   const normalizedOperator = normalizeOperator(operator);
-  const selectedTier = getTierById(selectedTierId);
-  const burnEstimate = estimateBurn(normalizedTask, selectedTierId);
+  const selectedTier = selectedTierId ? getTierById(selectedTierId) : null;
+  const fallbackTier = TIERS[0];
+  const burnEstimate = selectedTier
+    ? estimateBurn(normalizedTask, selectedTier.id)
+    : 0;
   const taskIsReady = normalizedTask.length >= 18;
-  const artifactPreview = buildArtifactPreview(selectedTierId, normalizedTask);
-  const features = useMemo(() => buildFeatureSet(selectedTier), [selectedTier]);
-  const terms = useMemo(
-    () => [
-      {
-        label: "Delivery",
-        value: selectedTier.paymentRequired
-          ? "Delivered right after PayPal payment."
-          : "Delivered right after you submit the task.",
-      },
-      {
-        label: "Compute",
-        value: "Not included. You run the prompt in your own AI account.",
-      },
-      {
-        label: "Record",
-        value: selectedTier.paymentRequired
-          ? "PayPal receipt plus signed PDF."
-          : "Signed PDF plus free download record.",
-      },
-      {
-        label: "Style",
-        value: "Serious tone, too many steps, clear instructions.",
-      },
-    ],
-    [selectedTier.paymentRequired],
-  );
+  const artifactPreview = selectedTier
+    ? buildArtifactPreview(selectedTier.id, normalizedTask)
+    : [];
+  const terms = selectedTier
+    ? [
+        {
+          label: "Delivery",
+          value: selectedTier.paymentRequired
+            ? "Delivered right after PayPal payment."
+            : "Delivered right after you submit the task.",
+        },
+        {
+          label: "Compute",
+          value: "Not included. You run the prompt in your own AI account.",
+        },
+        {
+          label: "Record",
+          value: selectedTier.paymentRequired
+            ? "PayPal receipt plus signed PDF."
+            : "Signed PDF plus free download record.",
+        },
+        {
+          label: "Style",
+          value: "Serious tone, too many steps, clear instructions.",
+        },
+      ]
+    : [];
 
   const handleFreeGenerate = async () => {
+    if (!selectedTier) {
+      return;
+    }
+
     setErrorMessage(null);
     setIsFreeGenerating(true);
 
@@ -701,6 +615,10 @@ export function TokenMaxxerApp() {
   };
 
   const openEnrollment = () => {
+    if (!selectedTier) {
+      return;
+    }
+
     setErrorMessage(null);
     setModalDownloadState(null);
     setIsEnrollmentOpen(true);
@@ -709,13 +627,6 @@ export function TokenMaxxerApp() {
   const closeEnrollment = () => {
     setIsEnrollmentOpen(false);
     setModalDownloadState(null);
-  };
-
-  const scrollToClasses = () => {
-    tierSectionRef.current?.scrollIntoView({
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-      block: "start",
-    });
   };
 
   return (
@@ -746,10 +657,10 @@ export function TokenMaxxerApp() {
       <div aria-hidden className="page-grain" />
 
       <main className="relative z-10 mx-auto flex w-full max-w-[1520px] flex-col gap-8 px-5 pb-14 pt-6 sm:px-8 lg:px-10 lg:pb-20 lg:pt-8">
-        <section className="relative grid min-h-[82svh] gap-8 border-b border-line/70 pb-12 pt-6 lg:grid-cols-[minmax(0,1.02fr)_minmax(420px,500px)] lg:items-center lg:pb-16 lg:pt-10">
+        <section className="relative space-y-10 border-b border-line/70 pb-12 pt-6 lg:space-y-12 lg:pb-16 lg:pt-10">
           <div aria-hidden className="hero-head hidden lg:block" />
 
-          <div className="relative z-10 space-y-8 lg:max-w-[780px] lg:pr-6">
+          <div className="relative z-10 space-y-6 lg:max-w-[780px]">
             <div className="space-y-6">
               <div className="fade-blur-up inline-flex items-center gap-3 [--delay:120ms]">
                 <span className="brand-mark" />
@@ -758,194 +669,14 @@ export function TokenMaxxerApp() {
                 tokenMAxXxERpro
               </h1>
               <p className="fade-blur-up max-w-2xl text-lg leading-8 text-foreground/72 sm:text-[1.18rem] [--delay:260ms]">
-                Download a PDF prompt that turns a normal task into an
-                overheated AI workflow. You use your own model account. We just
-                hand you the instructions.
+                A protocol built for operators who understand that restraint is
+                for amateurs. Load it into your model. Burn tokens like the
+                real professionals.
               </p>
             </div>
-
-            <div className="fade-blur-up grid gap-5 border-y border-line/80 py-5 sm:grid-cols-3 [--delay:320ms]">
-              <div>
-                <p className="eyebrow text-muted">Delivery format</p>
-                <p className="mt-3 text-sm leading-7 text-foreground/74">
-                  PDF prompts you can paste straight into your model.
-                </p>
-              </div>
-              <div>
-                <p className="eyebrow text-muted">Token liability</p>
-                <p className="mt-3 text-sm leading-7 text-foreground/74">
-                  All burn occurs against the operator&apos;s own AI account.
-                </p>
-              </div>
-              <div>
-                <p className="eyebrow text-muted">Access model</p>
-                <p className="mt-3 text-sm leading-7 text-foreground/74">
-                  Free sample, one-session burn, or an hourly loop.
-                </p>
-              </div>
-            </div>
           </div>
 
-          <div className="glass-panel fade-blur-up relative z-10 rounded-[32px] p-5 sm:p-6 lg:p-7 [--delay:380ms]">
-            <div className="relative z-10">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="eyebrow text-muted">Enrollment Console</p>
-                  <h2 className="mt-4 font-display text-[2.3rem] leading-none tracking-[-0.05em] text-foreground">
-                    Mission intake
-                  </h2>
-                  <p className="mt-4 max-w-md text-sm leading-7 text-foreground/68">
-                    Enter the task. Pick a class. Get a PDF that makes the
-                    model take the longest possible route to the answer.
-                  </p>
-                </div>
-
-                <div className="rounded-full border border-line px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-muted-strong">
-                  {selectedTier.name}
-                </div>
-              </div>
-
-              <div className="mt-7 space-y-5">
-                <div>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <label htmlFor="task" className="eyebrow text-muted">
-                      Mission brief
-                    </label>
-                    <span className="eyebrow text-muted">
-                      {normalizedTask.length}/420
-                    </span>
-                  </div>
-                  <textarea
-                    id="task"
-                    value={task}
-                    onChange={(event) => setTask(event.target.value.slice(0, 420))}
-                    rows={6}
-                    className="field-input min-h-[180px] w-full rounded-[24px] px-5 py-4 text-base leading-7 text-foreground placeholder:text-foreground/28"
-                    placeholder="Describe the simple task you want to turn into a ridiculous token-burning workflow."
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="operator"
-                    className="mb-3 block eyebrow text-muted"
-                  >
-                    Operator reference
-                  </label>
-                  <input
-                    id="operator"
-                    value={operator}
-                    onChange={(event) =>
-                      setOperator(event.target.value.slice(0, 120))
-                    }
-                    className="field-input w-full rounded-[20px] px-4 py-3 text-sm text-foreground placeholder:text-foreground/28"
-                    placeholder="Optional name or email"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <Metric label="Protocol class" value={selectedTier.name} />
-                <Metric
-                  label="Estimated burn"
-                  value={`${formatNumber(burnEstimate)} tokens`}
-                />
-                <Metric
-                  label="Artifact count"
-                  value={`${selectedTier.artifactCount} PDF items`}
-                />
-              </div>
-
-              <div className="glass-divider mt-6 pt-6">
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  {selectedTier.paymentRequired ? (
-                    <button
-                      type="button"
-                      disabled={!taskIsReady}
-                      onClick={openEnrollment}
-                      className="primary-button rounded-full px-6 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
-                    >
-                      Open {selectedTier.name} enrollment
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={!taskIsReady || isFreeGenerating}
-                      onClick={handleFreeGenerate}
-                      className="primary-button rounded-full px-6 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
-                    >
-                      {isFreeGenerating
-                        ? "Issuing dossier..."
-                        : `Issue ${selectedTier.name} dossier`}
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={scrollToClasses}
-                    className="secondary-button rounded-full px-6 py-3 text-sm text-foreground/78"
-                  >
-                    See access classes
-                  </button>
-                </div>
-
-                <p className="mt-4 text-xs leading-6 text-foreground/56">
-                  Free access downloads right away. Paid classes open PayPal and
-                  deliver right after payment. No hosted compute is included.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {downloadState ? (
-          <section
-            aria-live="polite"
-            className="glass-panel rounded-[28px] px-5 py-5 sm:px-6"
-          >
-            <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="eyebrow text-accent-ember">{downloadState.headline}</p>
-                <p className="mt-3 text-sm leading-7 text-foreground/76">
-                  {downloadState.copy}
-                </p>
-                {downloadState.receipt ? (
-                  <p className="mt-3 eyebrow text-muted">{downloadState.receipt}</p>
-                ) : null}
-              </div>
-
-              <a
-                href={downloadState.downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="primary-button inline-flex rounded-full px-6 py-3 text-sm font-medium"
-              >
-                Download dossier
-              </a>
-            </div>
-          </section>
-        ) : null}
-
-        {errorMessage ? (
-          <section className="rounded-[24px] border border-danger/35 bg-danger/10 px-5 py-4 text-sm leading-7 text-foreground/82">
-            {errorMessage}
-          </section>
-        ) : null}
-
-        <section
-          id="enrollment-classes"
-          ref={tierSectionRef}
-          className="space-y-6 pt-2"
-        >
-          <div className="max-w-3xl">
-            <p className="eyebrow text-muted">Enrollment Classes</p>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-foreground/68">
-              Start small, burn a lot, or keep it looping. The only thing that
-              changes is how much extra process the prompt adds.
-            </p>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-3">
+          <div className="fade-blur-up grid gap-4 pt-2 [--delay:320ms] xl:grid-cols-3">
             {TIERS.map((tier) => (
               <TierCard
                 key={tier.id}
@@ -962,83 +693,218 @@ export function TokenMaxxerApp() {
               />
             ))}
           </div>
-        </section>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] lg:items-start">
-          <div className="max-w-md space-y-4 pt-1">
-            <p className="eyebrow text-muted">What You Receive</p>
-            <p className="text-sm leading-7 text-foreground/68 sm:text-base sm:leading-8">
-              Each class gives you the main prompt, a review layer, and a PDF
-              record of what you bought.
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            {features.map((feature, index) => (
-              <div
-                key={feature.label}
-                className="glass-panel rounded-[26px] p-5 sm:p-6"
-              >
-                <div className="relative z-10">
-                  <IconTile index={index} />
-                  <p className="mt-5 eyebrow text-accent-ember">
-                    {feature.detail}
+          {downloadState ? (
+            <section
+              aria-live="polite"
+              className="glass-panel rounded-[28px] px-5 py-5 sm:px-6"
+            >
+              <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="eyebrow text-accent-ember">{downloadState.headline}</p>
+                  <p className="mt-3 text-sm leading-7 text-foreground/76">
+                    {downloadState.copy}
                   </p>
-                  <h3 className="mt-3 font-display text-[1.9rem] leading-none tracking-[-0.045em] text-foreground">
-                    {feature.label}
-                  </h3>
-                  <p className="mt-4 text-sm leading-7 text-foreground/72">
-                    {feature.summary}
+                  {downloadState.receipt ? (
+                    <p className="mt-3 eyebrow text-muted">{downloadState.receipt}</p>
+                  ) : null}
+                </div>
+
+                <a
+                  href={downloadState.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="primary-button inline-flex rounded-full px-6 py-3 text-sm font-medium"
+                >
+                  Download dossier
+                </a>
+              </div>
+            </section>
+          ) : null}
+
+          {errorMessage ? (
+            <section className="rounded-[24px] border border-danger/35 bg-danger/10 px-5 py-4 text-sm leading-7 text-foreground/82">
+              {errorMessage}
+            </section>
+          ) : null}
+
+          {selectedTier ? (
+            <div className="glass-panel rounded-[32px] p-5 sm:p-6 lg:p-7">
+              <div className="relative z-10">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="eyebrow text-muted">Selected Class</p>
+                    <h2 className="mt-4 font-display text-[2.3rem] leading-none tracking-[-0.05em] text-foreground">
+                      Mission brief
+                    </h2>
+                    <p className="mt-4 max-w-md text-sm leading-7 text-foreground/68">
+                      Enter the task. {selectedTier.name} will turn it into a
+                      longer, hotter, more complicated process.
+                    </p>
+                  </div>
+
+                  <div className="rounded-full border border-line px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-muted-strong">
+                    {selectedTier.name}
+                  </div>
+                </div>
+
+                <div className="mt-7 space-y-5">
+                  <div>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <label htmlFor="task" className="eyebrow text-muted">
+                        Mission brief
+                      </label>
+                      <span className="eyebrow text-muted">
+                        {normalizedTask.length}/420
+                      </span>
+                    </div>
+                    <textarea
+                      id="task"
+                      value={task}
+                      onChange={(event) =>
+                        setTask(event.target.value.slice(0, 420))
+                      }
+                      rows={6}
+                      className="field-input min-h-[180px] w-full rounded-[24px] px-5 py-4 text-base leading-7 text-foreground placeholder:text-foreground/28"
+                      placeholder="Describe the simple task you want to turn into a ridiculous token-burning workflow."
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="operator"
+                      className="mb-3 block eyebrow text-muted"
+                    >
+                      Operator reference
+                    </label>
+                    <input
+                      id="operator"
+                      value={operator}
+                      onChange={(event) =>
+                        setOperator(event.target.value.slice(0, 120))
+                      }
+                      className="field-input w-full rounded-[20px] px-4 py-3 text-sm text-foreground placeholder:text-foreground/28"
+                      placeholder="Optional name or email"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  <Metric label="Protocol class" value={selectedTier.name} />
+                  <Metric
+                    label="Estimated burn"
+                    value={`${formatNumber(burnEstimate)} tokens`}
+                  />
+                  <Metric
+                    label="Artifact count"
+                    value={`${selectedTier.artifactCount} PDF items`}
+                  />
+                </div>
+
+                <div className="glass-divider mt-6 pt-6">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    {selectedTier.paymentRequired ? (
+                      <button
+                        type="button"
+                        disabled={!taskIsReady}
+                        onClick={openEnrollment}
+                        className="primary-button rounded-full px-6 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                      >
+                        Open {selectedTier.name} enrollment
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!taskIsReady || isFreeGenerating}
+                        onClick={handleFreeGenerate}
+                        className="primary-button rounded-full px-6 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                      >
+                        {isFreeGenerating
+                          ? "Issuing dossier..."
+                          : `Issue ${selectedTier.name} dossier`}
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-xs leading-6 text-foreground/56">
+                    Free access downloads right away. Paid classes open PayPal
+                    and deliver right after payment. No hosted compute is
+                    included.
                   </p>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : null}
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(280px,0.55fr)]">
-          <div className="glass-panel rounded-[28px] px-5 py-6 sm:px-7">
-            <div className="relative z-10">
-              <p className="eyebrow text-muted">Current PDF</p>
-              <h2 className="mt-4 font-display text-[2.2rem] leading-none tracking-[-0.05em] text-foreground">
-                What&apos;s inside {selectedTier.name}
-              </h2>
+        {selectedTier ? (
+          <section className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(280px,0.55fr)]">
+            <div className="glass-panel rounded-[28px] px-5 py-6 sm:px-7">
+              <div className="relative z-10">
+                <h2 className="font-display text-[2.2rem] leading-none tracking-[-0.05em] text-foreground">
+                  What&apos;s inside {selectedTier.name}
+                </h2>
 
-              <div className="mt-6 divide-y divide-line rounded-[24px] border border-line bg-black/16">
-                {artifactPreview.map((artifact) => (
-                  <div
-                    key={artifact}
-                    className="flex items-start justify-between gap-4 px-5 py-4"
-                  >
-                    <p className="text-sm leading-7 text-foreground/74">
-                      {artifact}
-                    </p>
-                    <span className="mt-1 h-2 w-2 rounded-full bg-accent/70 shadow-[0_0_18px_rgba(255,109,87,0.55)]" />
-                  </div>
-                ))}
+                <div className="mt-6 divide-y divide-line rounded-[24px] border border-line bg-black/16">
+                  {artifactPreview.map((artifact) => (
+                    <div
+                      key={artifact}
+                      className="flex items-start justify-between gap-4 px-5 py-4"
+                    >
+                      <p className="text-sm leading-7 text-foreground/74">
+                        {artifact}
+                      </p>
+                      <span className="mt-1 h-2 w-2 rounded-full bg-accent/70 shadow-[0_0_18px_rgba(255,109,87,0.55)]" />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="glass-panel rounded-[28px] px-5 py-6 sm:px-6">
-            <div className="relative z-10">
-              <p className="eyebrow text-muted">Enrollment Terms</p>
-              <div className="mt-6 space-y-5">
-                {terms.map((term) => (
-                  <div key={term.label} className="border-b border-line pb-5 last:border-b-0 last:pb-0">
-                    <p className="eyebrow text-muted">{term.label}</p>
-                    <p className="mt-3 text-sm leading-7 text-foreground/72">
-                      {term.value}
-                    </p>
-                  </div>
-                ))}
+            <div className="glass-panel rounded-[28px] px-5 py-6 sm:px-6">
+              <div className="relative z-10">
+                <p className="eyebrow text-muted">Enrollment Terms</p>
+                <div className="mt-6 space-y-5">
+                  {terms.map((term) => (
+                    <div
+                      key={term.label}
+                      className="border-b border-line pb-5 last:border-b-0 last:pb-0"
+                    >
+                      <p className="eyebrow text-muted">{term.label}</p>
+                      <p className="mt-3 text-sm leading-7 text-foreground/72">
+                        {term.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         <footer className="border-t border-line/70 pb-6 pt-8">
-          <div className="flex flex-col gap-5 text-sm text-foreground/56 sm:flex-row sm:items-start sm:justify-between">
+          <div className="grid gap-5 border-b border-line/70 pb-8 sm:grid-cols-3">
+            <div>
+              <p className="eyebrow text-muted">Delivery format</p>
+              <p className="mt-3 text-sm leading-7 text-foreground/74">
+                PDF prompts you can paste straight into your model.
+              </p>
+            </div>
+            <div>
+              <p className="eyebrow text-muted">Token liability</p>
+              <p className="mt-3 text-sm leading-7 text-foreground/74">
+                All burn occurs against the operator&apos;s own AI account.
+              </p>
+            </div>
+            <div>
+              <p className="eyebrow text-muted">Access model</p>
+              <p className="mt-3 text-sm leading-7 text-foreground/74">
+                Free sample, one-session burn, or an hourly loop.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-5 pt-8 text-sm text-foreground/56 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="eyebrow text-muted">tokenMAxXxERpro</p>
               <p className="mt-3 max-w-md leading-7">
@@ -1066,7 +932,7 @@ export function TokenMaxxerApp() {
         onSuccess={handlePaidSuccess}
         operator={normalizedOperator}
         task={normalizedTask || DEFAULT_TASK}
-        tier={selectedTier}
+        tier={selectedTier ?? fallbackTier}
       />
     </div>
   );
