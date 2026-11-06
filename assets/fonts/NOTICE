@@ -1,0 +1,22 @@
+Vendored fonts for protocol PDFs. The server reads these files from disk when a
+protocol contains characters the standard PDF fonts cannot encode. It does not
+download fonts when a protocol is requested.
+
+NotoSans-Regular.ttf
+NotoSans-Bold.ttf
+  Upstream hinted static builds of Noto Sans.
+  https://github.com/notofonts/notofonts.github.io/tree/main/fonts/NotoSans/hinted/ttf
+  License: OFL-NotoSans.txt
+
+NotoSansSC-Regular.ttf
+  Static weight-400 instance of the Google Fonts Noto Sans SC variable font
+  (https://github.com/google/fonts/tree/main/ofl/notosanssc), produced with
+  fonttools varLib.instancer at wght=400. The upstream copyright reserves the
+  font name Source. This file is not named Source.
+  License: OFL-NotoSansSC.txt
+
+NotoEmoji-Regular.ttf
+  Static weight-400 instance of the Google Fonts Noto Emoji variable font
+  (https://github.com/google/fonts/tree/main/ofl/notoemoji), produced with
+  fonttools varLib.instancer at wght=400.
+  License: OFL-NotoEmoji.txt

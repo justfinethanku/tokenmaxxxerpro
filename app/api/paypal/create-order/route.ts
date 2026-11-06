@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 
+import { assertPdfTextSupported, UnsupportedPdfTextError } from "@/lib/pdf-fonts";
 import { createPayPalOrder } from "@/lib/paypal";
-import { getTierById } from "@/lib/products";
+import { getTierById, normalizeOperator, normalizeTask } from "@/lib/products";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { tierId?: string };
+    const body = (await request.json()) as {
+      operator?: unknown;
+      task?: unknown;
+      tierId?: string;
+    };
 
     if (!body.tierId) {
       return NextResponse.json(
@@ -25,6 +30,24 @@ export async function POST(request: Request) {
       );
     }
 
+    if (body.task != null && typeof body.task !== "string") {
+      return NextResponse.json(
+        { error: "Provide a mission string." },
+        { status: 400 },
+      );
+    }
+
+    if (body.operator != null && typeof body.operator !== "string") {
+      return NextResponse.json(
+        { error: "Provide an optional operator string." },
+        { status: 400 },
+      );
+    }
+
+    await assertPdfTextSupported(
+      `${normalizeOperator(typeof body.operator === "string" ? body.operator : "")}\n${normalizeTask(typeof body.task === "string" ? body.task : "")}`,
+    );
+
     const order = await createPayPalOrder(tier);
 
     return NextResponse.json(order);
@@ -36,7 +59,7 @@ export async function POST(request: Request) {
             ? error.message
             : "Unable to create a PayPal order.",
       },
-      { status: 500 },
+      { status: error instanceof UnsupportedPdfTextError ? 400 : 500 },
     );
   }
 }

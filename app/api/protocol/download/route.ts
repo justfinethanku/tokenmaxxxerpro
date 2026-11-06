@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { UnsupportedPdfTextError } from "@/lib/pdf-fonts";
 import { generateProtocolPdf } from "@/lib/pdf";
 import { buildProtocol } from "@/lib/protocols";
 import { verifyDownloadToken } from "@/lib/tokens";
@@ -37,7 +38,20 @@ export async function GET(request: Request) {
     task: payload.task,
     tierId: payload.tierId,
   });
-  const pdfBytes = await generateProtocolPdf(protocol);
+
+  // Tokens store the mission text. The PDF is rendered on each download, so a
+  // link issued before Unicode fonts were vendored uses this renderer too.
+  let pdfBytes: Uint8Array;
+  try {
+    pdfBytes = await generateProtocolPdf(protocol);
+  } catch (error) {
+    if (error instanceof UnsupportedPdfTextError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    throw error;
+  }
+
   const responseBody = Uint8Array.from(pdfBytes).buffer;
 
   return new NextResponse(responseBody, {

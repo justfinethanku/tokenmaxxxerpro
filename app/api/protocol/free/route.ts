@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { assertPdfTextSupported, UnsupportedPdfTextError } from "@/lib/pdf-fonts";
 import { normalizeOperator, normalizeTask } from "@/lib/products";
 import { signDownloadToken } from "@/lib/tokens";
 
@@ -48,10 +49,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedOperator = normalizeOperator(operator ?? "");
+    await assertPdfTextSupported(`${normalizedOperator}\n${normalizedTask}`);
+
     const token = signDownloadToken({
       issuedAt: Date.now(),
       kind: "protocol",
-      operator: normalizeOperator(operator ?? ""),
+      operator: normalizedOperator,
       task: normalizedTask,
       tierId: "free",
     });
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
             ? error.message
             : "Failed to compile the starter protocol.",
       },
-      { status: 500 },
+      { status: error instanceof UnsupportedPdfTextError ? 400 : 500 },
     );
   }
 }

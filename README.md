@@ -37,7 +37,7 @@ Use Node.js 20.9 or later and npm. This setup was checked with Node.js 22.22.2 a
 
    Open `http://127.0.0.1:3000`. This configuration supports the free PDF flow without PayPal credentials. The demo key is public and is only for local testing. There is no `.env.example` to copy. For configured environments, inject the values in the configuration table through your environment provisioning; Fleet-managed secrets come from Fleet.
 
-3. Enter a mission of at least 18 characters and generate the free protocol. Use ASCII text for this smoke check; see [Known limitations](#known-limitations) for the PDF font issue. The download should return a PDF attachment named `tokenmaxxerpro-free-protocol-manual.pdf`.
+3. Enter a mission of at least 18 characters and generate the free protocol. The download should return a PDF attachment named `tokenmaxxerpro-free-protocol-manual.pdf`. Operator names and missions can include emoji and Chinese text. Characters the vendored fonts cannot draw are rejected before a link is issued.
 
 4. Stop the server with Ctrl+C before switching to a production build in the same checkout.
 
@@ -112,7 +112,7 @@ Download tokens include the mission and operator as base64url JSON, signed with 
 1. The user enters a task and selects a tier (`free`, `sprint`, or `pro`).
 2. The free tier calls `POST /api/protocol/free` and receives a signed download URL.
 3. Paid tiers call `POST /api/paypal/create-order`, then `POST /api/paypal/capture-order` after PayPal approval. The server checks the captured status, tier, USD currency and amount before signing a download URL.
-4. `GET /api/protocol/download?token=...` verifies the signature and generates the PDF on demand with private, uncached attachment headers.
+4. `GET /api/protocol/download?token=...` verifies the signature and generates the PDF on demand with private, uncached attachment headers. The signed token stores the mission and operator. It does not store a rendered file, so a link that was issued before Unicode fonts were added is rendered by the current fonts when it is opened. Personalization those fonts cannot draw returns HTTP 400 with an explanation instead of failing inside the PDF font.
 5. `POST /api/paypal/webhook` verifies notifications, attempts order enrichment and logs tracked events. It does not issue replacement links, email receipts or maintain buyer-facing fulfillment history.
 
 Tasks are whitespace-normalized, trimmed and limited to 420 characters; operators are limited to 120. Free issuance requires a normalized task of at least 18 characters. The catalog and prices live in [lib/products.ts](lib/products.ts).
@@ -148,12 +148,12 @@ PayPal subscriptions are app-specific; see the [PayPal webhooks overview](https:
 | Webhook returns HTTP 503 | Provision the listener's `PAYPAL_WEBHOOK_ID`. Signature verification also needs server PayPal credentials. |
 | Checkout succeeds but private event records are absent | Inspect `[tokenmaxxerpro][order-event-failed]` logs and Blob provisioning. Without a Blob token, inspect `[tokenmaxxerpro][order-event]` console records. |
 | A previously working download stops validating | Check whether the signing secret changed. There is no implemented self-service reissue or receipt-email flow. |
-| A signed download fails with a WinAnsi encoding error | Check for unsupported characters in task/operator; see the existing font-support issue below. |
+| A signed download returns HTTP 400 because characters cannot be embedded | The mission or operator uses a character outside the vendored Noto fonts. Remove it and issue a new protocol. Previously issued links render on download, so this response replaces the old WinAnsi font error. |
 
 Order-event records can contain payer email, operator and a task preview. Keep log and private Blob access appropriate for those records. Avoid pasting full signed download URLs into support logs.
 
 ## Known limitations
 
-- PDF standard fonts cannot encode all user input. Emoji missions and Chinese operator names can receive a signed URL that fails during download; the same renderer serves paid tiers. This is tracked in [FLEET-667](https://linear.app/contentionmedia/issue/FLEET-667).
+- Protocol PDFs draw ASCII with the standard PDF fonts and draw other supported characters with Noto Sans, Noto Sans SC, and Noto Emoji files vendored in `assets/fonts`. Those files are not downloaded when a protocol is requested. Text outside that coverage, such as Arabic, is rejected before a free link is issued and before PayPal capture. Paid download uses the same renderer.
 - Receipt email, an admin search/reissue page and persistent buyer-facing fulfillment history are not implemented.
 - Webhook logging is best-effort and does not recover a failed browser fulfillment. Live payment readiness requires configured end-to-end verification; a build and webhook subscription alone do not prove it.

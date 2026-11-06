@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { safelyLogOrderEvent, summarizeTask } from "@/lib/order-events";
+import { assertPdfTextSupported, UnsupportedPdfTextError } from "@/lib/pdf-fonts";
 import {
   assertCapturedPayment,
   capturePayPalOrder,
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
     }
 
     const normalizedOperator = normalizeOperator(body.operator ?? "");
+    await assertPdfTextSupported(`${normalizedOperator}\n${normalizedTask}`);
     const capturedOrder = await capturePayPalOrder(body.orderId);
     const capture = assertCapturedPayment(capturedOrder, tier.id);
     const taskSummary = summarizeTask(normalizedTask);
@@ -103,7 +105,7 @@ export async function POST(request: Request) {
             ? error.message
             : "PayPal payment capture failed.",
       },
-      { status: 500 },
+      { status: error instanceof UnsupportedPdfTextError ? 400 : 500 },
     );
   }
 }
