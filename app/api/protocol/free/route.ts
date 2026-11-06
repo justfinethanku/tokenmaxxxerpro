@@ -6,12 +6,40 @@ import { signDownloadToken } from "@/lib/tokens";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  let body: unknown;
+
   try {
-    const body = (await request.json()) as {
-      operator?: string;
-      task?: string;
-    };
-    const normalizedTask = normalizeTask(body.task ?? "");
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Request body must be valid JSON." },
+      { status: 400 },
+    );
+  }
+
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    Array.isArray(body) ||
+    !("task" in body) ||
+    typeof body.task !== "string"
+  ) {
+    return NextResponse.json(
+      { error: "Provide a mission string and an optional operator string." },
+      { status: 400 },
+    );
+  }
+
+  const operator = "operator" in body ? body.operator : undefined;
+  if (operator != null && typeof operator !== "string") {
+    return NextResponse.json(
+      { error: "Provide an optional operator string." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const normalizedTask = normalizeTask(body.task);
 
     if (normalizedTask.length < 18) {
       return NextResponse.json(
@@ -23,7 +51,7 @@ export async function POST(request: Request) {
     const token = signDownloadToken({
       issuedAt: Date.now(),
       kind: "protocol",
-      operator: normalizeOperator(body.operator ?? ""),
+      operator: normalizeOperator(operator ?? ""),
       task: normalizedTask,
       tierId: "free",
     });
