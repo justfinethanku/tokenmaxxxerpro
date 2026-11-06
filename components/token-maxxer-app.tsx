@@ -314,9 +314,11 @@ function TierCard({
       onMouseMove={handlePointerMove}
       onMouseLeave={resetPointer}
       onBlur={resetPointer}
+      aria-pressed={selected}
+      aria-label={`${tier.name}, ${tier.priceLabel}`}
       data-selected={selected}
       style={style}
-      className="tier-card glass-panel rounded-[28px] p-6 text-left focus-visible:outline-none"
+      className="tier-card glass-panel rounded-[28px] p-6 text-left"
     >
       <div className="relative z-10 flex h-full flex-col">
         <div className="flex items-start justify-between gap-4">
@@ -386,134 +388,149 @@ function EnrollmentModal({
   task: string;
   tier: Tier;
 }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
-    if (!isOpen) {
+    const dialog = dialogRef.current;
+    if (!isOpen || !dialog) {
       return;
     }
 
+    const opener = document.activeElement;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
+    // The native modal keeps the background inert, including while checkout
+    // loads or PayPal inserts focusable content inside the dialog.
+    dialog.showModal();
+    titleRef.current?.focus();
 
     return () => {
+      dialog.close();
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleEscape);
+      if (opener instanceof HTMLElement && opener.isConnected) {
+        opener.focus();
+      }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && downloadState) {
+      // Checkout controls disappear on success; move focus to the receipt.
+      titleRef.current?.focus();
+    }
+  }, [isOpen, downloadState]);
 
   if (!isOpen) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/72 px-4 py-4 backdrop-blur-md sm:items-center sm:px-6">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="enrollment-modal-title"
-        className="glass-panel relative w-full max-w-[740px] rounded-[32px] p-5 sm:p-7"
-      >
-        <div className="relative z-10">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="eyebrow text-muted">
-                {downloadState ? "Issued" : "Enrollment"}
-              </p>
-              <h2
-                id="enrollment-modal-title"
-                className="mt-3 font-display text-[2.2rem] leading-none tracking-[-0.05em] text-foreground"
-              >
-                {downloadState ? `${tier.name} unlocked` : `${tier.name} access`}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="secondary-button rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-muted-strong"
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="enrollment-modal-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      className="glass-panel enrollment-dialog max-w-[740px] rounded-[32px] p-5 sm:p-7"
+    >
+      <div className="relative z-10">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow text-muted">
+              {downloadState ? "Issued" : "Enrollment"}
+            </p>
+            <h2
+              ref={titleRef}
+              tabIndex={-1}
+              id="enrollment-modal-title"
+              className="mt-3 font-display text-[2.2rem] leading-none tracking-[-0.05em] text-foreground"
             >
-              Close
-            </button>
+              {downloadState ? `${tier.name} unlocked` : `${tier.name} access`}
+            </h2>
           </div>
 
-          {downloadState ? (
-            <div className="mt-8 flex flex-col items-center gap-6 text-center">
-              <VaultUnlockAnimation animationKey={downloadState.receipt ?? tier.id} />
-              <div className="max-w-md space-y-3">
-                <p className="eyebrow text-accent-ember">Issuance complete</p>
-                <p className="text-base leading-7 text-foreground/76">
-                  {downloadState.copy}
-                </p>
-                {downloadState.receipt ? (
-                  <p className="eyebrow text-muted">{downloadState.receipt}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <a
-                  href={downloadState.downloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="primary-button rounded-full px-6 py-3 text-sm font-medium"
-                >
-                  Download dossier
-                </a>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="secondary-button rounded-full px-6 py-3 text-sm text-foreground/78"
-                >
-                  Return to page
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-8 space-y-6">
-              <div className="grid gap-4 border-b border-line pb-6 sm:grid-cols-3">
-                <Metric label="Class" value={tier.name} />
-                <Metric label="Target burn" value={tier.targetLabel} />
-                <Metric label="Runtime" value={tier.runtimeLabel} />
-              </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="secondary-button rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-muted-strong"
+          >
+            Close
+          </button>
+        </div>
 
-              <div className="rounded-[24px] border border-line bg-black/16 p-5">
-                <p className="eyebrow text-muted">Mission brief</p>
-                <p className="mt-3 text-sm leading-7 text-foreground/74">
-                  {task}
-                </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <Metric
-                    label="Operator"
-                    value={operator || "Not provided"}
-                  />
-                  <Metric label="Delivery" value="Immediate PDF issuance" />
-                </div>
-              </div>
-
-              <PayPalCheckout
-                disabled={false}
-                operator={operator}
-                task={task}
-                tierId={tier.id as Exclude<TierId, "free">}
-                onError={onError}
-                onSuccess={onSuccess}
-              />
-
-              {errorMessage ? (
-                <div className="rounded-[22px] border border-danger/35 bg-danger/10 px-4 py-3 text-sm leading-6 text-foreground/82">
-                  {errorMessage}
-                </div>
+        {downloadState ? (
+          <div className="mt-8 flex flex-col items-center gap-6 text-center">
+            <VaultUnlockAnimation animationKey={downloadState.receipt ?? tier.id} />
+            <div className="max-w-md space-y-3">
+              <p className="eyebrow text-accent-ember">Issuance complete</p>
+              <p className="text-base leading-7 text-foreground/76">
+                {downloadState.copy}
+              </p>
+              {downloadState.receipt ? (
+                <p className="eyebrow text-muted">{downloadState.receipt}</p>
               ) : null}
             </div>
-          )}
-        </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <a
+                href={downloadState.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="primary-button rounded-full px-6 py-3 text-sm font-medium"
+              >
+                Download dossier
+              </a>
+              <button
+                type="button"
+                onClick={onClose}
+                className="secondary-button rounded-full px-6 py-3 text-sm text-foreground/78"
+              >
+                Return to page
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8 space-y-6">
+            <div className="grid gap-4 border-b border-line pb-6 sm:grid-cols-3">
+              <Metric label="Class" value={tier.name} />
+              <Metric label="Target burn" value={tier.targetLabel} />
+              <Metric label="Runtime" value={tier.runtimeLabel} />
+            </div>
+
+            <div className="rounded-[24px] border border-line bg-black/16 p-5">
+              <p className="eyebrow text-muted">Mission brief</p>
+              <p className="mt-3 text-sm leading-7 text-foreground/74">
+                {task}
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <Metric
+                  label="Operator"
+                  value={operator || "Not provided"}
+                />
+                <Metric label="Delivery" value="Immediate PDF issuance" />
+              </div>
+            </div>
+
+            <PayPalCheckout
+              disabled={false}
+              operator={operator}
+              task={task}
+              tierId={tier.id as Exclude<TierId, "free">}
+              onError={onError}
+              onSuccess={onSuccess}
+            />
+
+            <div
+              role="alert"
+              className={errorMessage ? "rounded-[22px] border border-danger/35 bg-danger/10 px-4 py-3 text-sm leading-6 text-foreground/82" : undefined}
+            >
+              {errorMessage}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </dialog>
   );
 }
 
@@ -704,9 +721,16 @@ export function TokenMaxxerApp() {
             ))}
           </div>
 
+          <p role="status" className="sr-only">
+            {isFreeGenerating
+              ? "Issuing dossier..."
+              : !isEnrollmentOpen && downloadState
+                ? `${downloadState.headline}. ${downloadState.copy}`
+                : ""}
+          </p>
+
           {downloadState ? (
             <section
-              aria-live="polite"
               className="glass-panel rounded-[28px] px-5 py-5 sm:px-6"
             >
               <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -732,11 +756,12 @@ export function TokenMaxxerApp() {
             </section>
           ) : null}
 
-          {errorMessage ? (
-            <section className="rounded-[24px] border border-danger/35 bg-danger/10 px-5 py-4 text-sm leading-7 text-foreground/82">
-              {errorMessage}
-            </section>
-          ) : null}
+          <div
+            role="alert"
+            className={!isEnrollmentOpen && errorMessage ? "rounded-[24px] border border-danger/35 bg-danger/10 px-5 py-4 text-sm leading-7 text-foreground/82" : undefined}
+          >
+            {!isEnrollmentOpen ? errorMessage : null}
+          </div>
 
           {selectedTier ? (
             <div className="glass-panel rounded-[32px] p-5 sm:p-6 lg:p-7">
@@ -770,14 +795,19 @@ export function TokenMaxxerApp() {
                     </div>
                     <textarea
                       id="task"
+                      aria-describedby="task-help"
+                      maxLength={420}
                       value={task}
                       onChange={(event) =>
                         setTask(event.target.value.slice(0, 420))
                       }
                       rows={6}
-                      className="field-input min-h-[180px] w-full rounded-[24px] px-5 py-4 text-base leading-7 text-foreground placeholder:text-foreground/28"
+                      className="field-input min-h-[180px] w-full rounded-[24px] px-5 py-4 text-base leading-7 text-foreground placeholder:text-foreground/60"
                       placeholder="Describe the simple task you want to turn into a ridiculous token-burning workflow."
                     />
+                    <p id="task-help" className="mt-3 text-xs leading-6 text-foreground/72">
+                      Use 18 to 420 characters to enable dossier issuance.
+                    </p>
                   </div>
 
                   <div>
@@ -785,15 +815,16 @@ export function TokenMaxxerApp() {
                       htmlFor="operator"
                       className="mb-3 block eyebrow text-muted"
                     >
-                      Operator reference
+                      Operator reference (optional)
                     </label>
                     <input
                       id="operator"
+                      maxLength={120}
                       value={operator}
                       onChange={(event) =>
                         setOperator(event.target.value.slice(0, 120))
                       }
-                      className="field-input w-full rounded-[20px] px-4 py-3 text-sm text-foreground placeholder:text-foreground/28"
+                      className="field-input w-full rounded-[20px] px-4 py-3 text-sm text-foreground placeholder:text-foreground/60"
                       placeholder="Optional name or email"
                     />
                   </div>

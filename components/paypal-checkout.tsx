@@ -55,7 +55,7 @@ export function PayPalCheckout({
 
   if (!clientId) {
     return (
-      <div className="rounded-[24px] border border-danger/35 bg-danger/10 p-5 text-sm leading-6 text-foreground/82">
+      <div role="alert" className="rounded-[24px] border border-danger/35 bg-danger/10 p-5 text-sm leading-6 text-foreground/82">
         PayPal client configuration is missing. Add
         {" "}
         <code className="font-mono text-[12px] text-accent-ember">
@@ -94,6 +94,10 @@ export function PayPalCheckout({
             <p className="mt-2 eyebrow text-muted">Immediate delivery</p>
           </div>
         </div>
+
+        <p role="status" className="sr-only">
+          {isCapturing ? "Confirming payment and issuing dossier..." : ""}
+        </p>
 
         <div className={disabled ? "pointer-events-none opacity-45" : undefined}>
           <PayPalOneTimePaymentButton
