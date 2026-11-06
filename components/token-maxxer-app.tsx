@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   startTransition,
   useEffect,
@@ -21,10 +22,19 @@ import {
   type TierId,
   type Tier,
 } from "@/lib/products";
-import {
-  PayPalCheckout,
-  type PaidCheckoutSuccess,
-} from "@/components/paypal-checkout";
+import type { PaidCheckoutSuccess } from "@/components/paypal-checkout";
+
+// EnrollmentModal renders checkout only after a paid enrollment is opened.
+const PayPalCheckout = dynamic(
+  () => import("@/components/paypal-checkout").then((mod) => mod.PayPalCheckout),
+  {
+    loading: () => (
+      <p role="status" className="text-sm leading-7 text-foreground/74">
+        Loading secure checkout...
+      </p>
+    ),
+  },
+);
 
 type DownloadState = {
   copy: string;
