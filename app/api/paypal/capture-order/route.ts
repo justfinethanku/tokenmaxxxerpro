@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { safelyLogOrderEvent, summarizeTask } from "@/lib/order-events";
-import { assertCapturedPayment, capturePayPalOrder } from "@/lib/paypal";
+import {
+  assertCapturedPayment,
+  capturePayPalOrder,
+  isPayPalOrderId,
+} from "@/lib/paypal";
 import {
   getTierById,
   normalizeOperator,
@@ -23,6 +27,13 @@ export async function POST(request: Request) {
     if (!body.orderId || !body.tierId || !body.task) {
       return NextResponse.json(
         { error: "Missing order, tier, or task information." },
+        { status: 400 },
+      );
+    }
+
+    if (!isPayPalOrderId(body.orderId)) {
+      return NextResponse.json(
+        { error: "Invalid PayPal order ID." },
         { status: 400 },
       );
     }
