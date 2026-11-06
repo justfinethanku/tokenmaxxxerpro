@@ -79,7 +79,6 @@ export async function generateProtocolPdf(
   const monoFont = await pdf.embedFont(StandardFonts.Courier);
 
   let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-  let pageNumber = 1;
   let cursorY = PAGE_HEIGHT - MARGIN;
 
   const ensureSpace = (height: number) => {
@@ -87,9 +86,7 @@ export async function generateProtocolPdf(
       return;
     }
 
-    addFooter(page, pageNumber, monoFont);
     page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-    pageNumber += 1;
     cursorY = PAGE_HEIGHT - MARGIN;
   };
 
@@ -265,6 +262,7 @@ export async function generateProtocolPdf(
     gapAfter: 8,
   });
 
+  // Finalize every page once, including the last page, after content pagination.
   for (const [index, pdfPage] of pdf.getPages().entries()) {
     addFooter(pdfPage, index + 1, monoFont);
   }
