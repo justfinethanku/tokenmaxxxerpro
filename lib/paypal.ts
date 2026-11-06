@@ -174,14 +174,32 @@ export async function createPayPalOrder(tier: Tier): Promise<{ orderId: string }
   return { orderId: response.id };
 }
 
+export function isPayPalOrderId(value: unknown): value is string {
+  // Orders v2 accepts 1–36 uppercase ASCII letters/digits, never URL syntax.
+  return (
+    typeof value === "string" &&
+    value.length >= 1 &&
+    value.length <= 36 &&
+    !/[^A-Z0-9]/.test(value)
+  );
+}
+
+function orderPath(orderId: string): string {
+  if (!isPayPalOrderId(orderId)) {
+    throw new Error("Invalid PayPal order ID.");
+  }
+
+  return `/v2/checkout/orders/${orderId}`;
+}
+
 export async function capturePayPalOrder(orderId: string): Promise<PayPalOrder> {
-  return paypalRequest<PayPalOrder>(`/v2/checkout/orders/${orderId}/capture`, {
+  return paypalRequest<PayPalOrder>(`${orderPath(orderId)}/capture`, {
     method: "POST",
   });
 }
 
 export async function showPayPalOrder(orderId: string): Promise<PayPalOrder> {
-  return paypalRequest<PayPalOrder>(`/v2/checkout/orders/${orderId}`, {
+  return paypalRequest<PayPalOrder>(orderPath(orderId), {
     method: "GET",
   });
 }

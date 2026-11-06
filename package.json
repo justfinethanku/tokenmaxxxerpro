@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test --test-concurrency=2 tests/*.test.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^9.1.1",
