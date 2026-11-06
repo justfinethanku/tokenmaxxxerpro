@@ -1,6 +1,6 @@
 # Font packaging
 
-Status: tested locally on 2026-11-06 (`npm test` 33/33, lint, `tsc --noEmit`, `npm run build`, and the trace script printed `trace proof passed` with 17 `@pdf-lib/fontkit` files on each of the four route traces). Preview and production HTTP are a separate check and are not established by that local result.
+Status: tested on 2026-11-06. Local: `npm test` 33/33, lint, `tsc --noEmit`, `npm run build`, and the trace script printed `trace proof passed` with 17 `@pdf-lib/fontkit` files on each of the four route traces. Preview HTTP on the branch alias is recorded below. That preview is not production acceptance. Production `dpl_3UVrvzQYzEuZAM9zhK7kZaD3THQe` still lacks this trace until this change is deployed there.
 
 Date: 2026-11-06
 
@@ -144,6 +144,22 @@ DOWNLOAD_TOKEN_SECRET=local-demo-only-do-not-use-in-production npm start -- --ho
 ```
 
 Record the preview deployment id, public alias, status, content-type, and body or PDF header separately from the local trace result.
+
+Unauthenticated requests to a protected preview alias return HTTP 401, `content-type: application/json`, and a body whose `error.message` is `Protected deployment`. Do not turn protection off to retest. Use the existing Vercel account access for that alias. Do not copy share tokens, cookies, or signed download URLs into this file.
+
+### Preview check 2026-11-06
+
+Deployment `dpl_FLQfbJKemkxRBv3NschNC5QYWB8W`, state `READY`, commit `dac6134ae37f0582f85a13a52ab4903a4afb7b66`.
+
+Public alias: `https://tokenmaxxerpro-git-bruh-fontki-52c35d-jonathan-edwards-projects.vercel.app`
+
+Unauthenticated `POST /api/protocol/free`: HTTP 401, `content-type: application/json`, `x-vercel-id: pdx1::ghm56-1793997036962-fd671667637c`.
+
+Authenticated requests to that same alias, without changing protection:
+
+- Unsupported Arabic body: HTTP 400, `content-type: application/json`, `x-vercel-id: pdx1::iad1::94xzh-1793997105155-c97d2a0ac3df`, `x-vercel-cache: MISS`. Body: `{"error":"These characters cannot be embedded in the protocol PDF: ع (U+0639), ل (U+0644), ي (U+064A), ا (U+0627). Remove them and try again."}`
+- Emoji body: HTTP 200, `content-type: application/json`, `x-vercel-id: pdx1::iad1::tlkvj-1793997106083-6390cac0c8d8`. The JSON had a `downloadUrl`. `GET` of that URL: HTTP 200, `content-type: application/pdf`, `content-disposition: attachment; filename="tokenmaxxerpro-free-protocol-manual.pdf"`, 12981 bytes, prefix `%PDF-`, `x-vercel-id: pdx1::iad1::fnnrf-1793997106210-2edd3876d7f4`. Extracted text included `Mission: Launch the rocket 🚀 protocol.`
+- Chinese operator `张伟`: HTTP 200, then HTTP 200 `application/pdf`, 12853 bytes, prefix `%PDF-`, `x-vercel-id: pdx1::iad1::bpphd-1793997106703-37c8e406d1ae`. Extracted text included `Operator: 张伟`.
 
 Cleanup:
 
