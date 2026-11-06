@@ -107,7 +107,7 @@ export function PayPalCheckout({
                 headers: {
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ tierId }),
+                body: JSON.stringify({ operator, task, tierId }),
               });
 
               const json = (await response.json()) as {
