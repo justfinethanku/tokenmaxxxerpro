@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { FacilityHero, FacilityExtras } from "@/components/burn-experience";
 import {
   startTransition,
   useEffect,
@@ -26,7 +27,8 @@ import type { PaidCheckoutSuccess } from "@/components/paypal-checkout";
 
 // EnrollmentModal renders checkout only after a paid enrollment is opened.
 const PayPalCheckout = dynamic(
-  () => import("@/components/paypal-checkout").then((mod) => mod.PayPalCheckout),
+  () =>
+    import("@/components/paypal-checkout").then((mod) => mod.PayPalCheckout),
   {
     loading: () => (
       <p role="status" className="text-sm leading-7 text-foreground/74">
@@ -59,69 +61,6 @@ const DEFAULT_POINTER: PointerState = {
   rotateX: 0,
   rotateY: 0,
 };
-
-const DEEP_EMBERS = [
-  {
-    blur: 82,
-    bottom: "4%",
-    delay: "-14s",
-    drift: "32px",
-    duration: "34s",
-    left: "8%",
-    opacity: 0.14,
-    size: 240,
-  },
-  {
-    blur: 70,
-    bottom: "16%",
-    delay: "-9s",
-    drift: "-26px",
-    duration: "30s",
-    left: "24%",
-    opacity: 0.09,
-    size: 180,
-  },
-  {
-    blur: 92,
-    bottom: "8%",
-    delay: "-21s",
-    drift: "22px",
-    duration: "38s",
-    left: "48%",
-    opacity: 0.08,
-    size: 260,
-  },
-  {
-    blur: 78,
-    bottom: "10%",
-    delay: "-11s",
-    drift: "-18px",
-    duration: "33s",
-    left: "66%",
-    opacity: 0.1,
-    size: 210,
-  },
-  {
-    blur: 66,
-    bottom: "3%",
-    delay: "-27s",
-    drift: "18px",
-    duration: "29s",
-    left: "84%",
-    opacity: 0.08,
-    size: 170,
-  },
-  {
-    blur: 58,
-    bottom: "34%",
-    delay: "-7s",
-    drift: "14px",
-    duration: "24s",
-    left: "58%",
-    opacity: 0.06,
-    size: 132,
-  },
-];
 
 function usePrefersReducedMotion() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -235,13 +174,7 @@ function buildArtifactPreview(tierId: TierId, task: string): string[] {
   }
 }
 
-function Metric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="sub-card rounded-[18px] p-4">
       <p className="eyebrow text-muted">{label}</p>
@@ -318,7 +251,7 @@ function TierCard({
       aria-label={`${tier.name}, ${tier.priceLabel}`}
       data-selected={selected}
       style={style}
-      className="tier-card glass-panel rounded-[28px] p-6 text-left"
+      className="tier-card glass-panel rounded-[16px] p-6 text-left"
     >
       <div className="relative z-10 flex h-full flex-col">
         <div className="flex items-start justify-between gap-4">
@@ -357,7 +290,7 @@ function TierCard({
           {tier.description}
         </p>
 
-        <div className="mt-6 grid gap-3 border-t border-line pt-5 sm:grid-cols-3">
+        <div className="mt-6 grid gap-3 border-t border-line pt-5">
           <Metric label="Target burn" value={tier.targetLabel} />
           <Metric label="Runtime" value={tier.runtimeLabel} />
           <Metric label="Artifacts" value={`${tier.artifactCount} issued`} />
@@ -462,7 +395,9 @@ function EnrollmentModal({
 
         {downloadState ? (
           <div className="mt-8 flex flex-col items-center gap-6 text-center">
-            <VaultUnlockAnimation animationKey={downloadState.receipt ?? tier.id} />
+            <VaultUnlockAnimation
+              animationKey={downloadState.receipt ?? tier.id}
+            />
             <div className="max-w-md space-y-3">
               <p className="eyebrow text-accent-ember">Issuance complete</p>
               <p className="text-base leading-7 text-foreground/76">
@@ -504,10 +439,7 @@ function EnrollmentModal({
                 {task}
               </p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <Metric
-                  label="Operator"
-                  value={operator || "Not provided"}
-                />
+                <Metric label="Operator" value={operator || "Not provided"} />
                 <Metric label="Delivery" value="Immediate PDF issuance" />
               </div>
             </div>
@@ -523,7 +455,11 @@ function EnrollmentModal({
 
             <div
               role="alert"
-              className={errorMessage ? "rounded-[22px] border border-danger/35 bg-danger/10 px-4 py-3 text-sm leading-6 text-foreground/82" : undefined}
+              className={
+                errorMessage
+                  ? "rounded-[22px] border border-danger/35 bg-danger/10 px-4 py-3 text-sm leading-6 text-foreground/82"
+                  : undefined
+              }
             >
               {errorMessage}
             </div>
@@ -539,7 +475,9 @@ export function TokenMaxxerApp() {
   const [task, setTask] = useState(DEFAULT_TASK);
   const [operator, setOperator] = useState("");
   const [selectedTierId, setSelectedTierId] = useState<TierId | null>(null);
-  const [downloadState, setDownloadState] = useState<DownloadState | null>(null);
+  const [downloadState, setDownloadState] = useState<DownloadState | null>(
+    null,
+  );
   const [modalDownloadState, setModalDownloadState] =
     useState<DownloadState | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -658,52 +596,29 @@ export function TokenMaxxerApp() {
 
   return (
     <div className="relative isolate overflow-hidden">
-      <div aria-hidden className="deep-embers">
-        {DEEP_EMBERS.map((ember, index) => {
-          const style = {
-            animationDelay: ember.delay,
-            animationDuration: ember.duration,
-            bottom: ember.bottom,
-            filter: `blur(${ember.blur}px)`,
-            height: ember.size,
-            left: ember.left,
-            width: ember.size,
-            "--ember-drift": ember.drift,
-            "--ember-opacity": `${ember.opacity}`,
-          } as CSSProperties;
-
-          return (
-            <span
-              key={`${ember.left}-${ember.duration}-${index}`}
-              className="deep-embers__ember"
-              style={style}
-            />
-          );
-        })}
-      </div>
-      <div aria-hidden className="page-grain" />
-
-      <main className="relative z-10 mx-auto flex w-full max-w-[1520px] flex-col gap-8 px-5 pb-14 pt-6 sm:px-8 lg:px-10 lg:pb-20 lg:pt-8">
-        <section className="relative space-y-10 border-b border-line/70 pb-12 pt-6 lg:space-y-12 lg:pb-16 lg:pt-10">
-          <div aria-hidden className="hero-head hidden lg:block" />
-
-          <div className="relative z-10 space-y-6 lg:max-w-[780px]">
-            <div className="space-y-6">
-              <div className="fade-blur-up inline-flex items-center gap-3 [--delay:120ms]">
-                <span className="brand-mark" />
-              </div>
-              <h1 className="hero-wordmark fade-blur-up w-fit max-w-full whitespace-nowrap font-display text-[clamp(1.95rem,7.2vw,7.4rem)] leading-[0.9] tracking-[-0.085em] [--delay:180ms]">
-                tokenMAxXxERpro
-              </h1>
-              <p className="fade-blur-up max-w-2xl text-lg leading-8 text-foreground/72 sm:text-[1.18rem] [--delay:260ms]">
-                A protocol built for operators who understand that restraint is
-                for amateurs. Load it into your model. Burn tokens like the
-                real professionals.
-              </p>
+      <main className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-5 pb-14 pt-6 sm:px-8 lg:px-10 lg:pb-20 lg:pt-8">
+        <FacilityHero />
+        <section
+          id="protocols"
+          className="protocols section-space relative space-y-8"
+          aria-labelledby="protocols-title"
+        >
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow orange">01 / Choose your escalation</p>
+              <h2 id="protocols-title">
+                Big process energy.
+                <br />
+                Small PDF energy.
+              </h2>
             </div>
+            <p>
+              Three levels of procedural excess.
+              <br />
+              One-time prices. Your compute sold separately.
+            </p>
           </div>
-
-          <div className="fade-blur-up grid gap-4 pt-2 [--delay:320ms] xl:grid-cols-3">
+          <div className="grid gap-4 pt-2 lg:grid-cols-3">
             {TIERS.map((tier) => (
               <TierCard
                 key={tier.id}
@@ -730,17 +645,19 @@ export function TokenMaxxerApp() {
           </p>
 
           {downloadState ? (
-            <section
-              className="glass-panel rounded-[28px] px-5 py-5 sm:px-6"
-            >
+            <section className="glass-panel rounded-[28px] px-5 py-5 sm:px-6">
               <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="eyebrow text-accent-ember">{downloadState.headline}</p>
+                  <p className="eyebrow text-accent-ember">
+                    {downloadState.headline}
+                  </p>
                   <p className="mt-3 text-sm leading-7 text-foreground/76">
                     {downloadState.copy}
                   </p>
                   {downloadState.receipt ? (
-                    <p className="mt-3 eyebrow text-muted">{downloadState.receipt}</p>
+                    <p className="mt-3 eyebrow text-muted">
+                      {downloadState.receipt}
+                    </p>
                   ) : null}
                 </div>
 
@@ -758,7 +675,11 @@ export function TokenMaxxerApp() {
 
           <div
             role="alert"
-            className={!isEnrollmentOpen && errorMessage ? "rounded-[24px] border border-danger/35 bg-danger/10 px-5 py-4 text-sm leading-7 text-foreground/82" : undefined}
+            className={
+              !isEnrollmentOpen && errorMessage
+                ? "rounded-[24px] border border-danger/35 bg-danger/10 px-5 py-4 text-sm leading-7 text-foreground/82"
+                : undefined
+            }
           >
             {!isEnrollmentOpen ? errorMessage : null}
           </div>
@@ -805,7 +726,10 @@ export function TokenMaxxerApp() {
                       className="field-input min-h-[180px] w-full rounded-[24px] px-5 py-4 text-base leading-7 text-foreground placeholder:text-foreground/60"
                       placeholder="Describe the simple task you want to turn into a ridiculous token-burning workflow."
                     />
-                    <p id="task-help" className="mt-3 text-xs leading-6 text-foreground/72">
+                    <p
+                      id="task-help"
+                      className="mt-3 text-xs leading-6 text-foreground/72"
+                    >
                       Use 18 to 420 characters to enable dossier issuance.
                     </p>
                   </div>
@@ -825,7 +749,7 @@ export function TokenMaxxerApp() {
                         setOperator(event.target.value.slice(0, 120))
                       }
                       className="field-input w-full rounded-[20px] px-4 py-3 text-sm text-foreground placeholder:text-foreground/60"
-                      placeholder="Optional name or email"
+                      placeholder="e.g. Deputy Director of Unnecessary Review"
                     />
                   </div>
                 </div>
@@ -922,6 +846,8 @@ export function TokenMaxxerApp() {
             </div>
           </section>
         ) : null}
+
+        <FacilityExtras />
 
         <footer className="border-t border-line/70 pb-6 pt-8">
           <div className="grid gap-5 border-b border-line/70 pb-8 sm:grid-cols-3">
