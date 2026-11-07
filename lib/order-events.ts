@@ -1,5 +1,7 @@
 import { put } from "@vercel/blob";
 
+import { withNetworkDeadline } from "@/lib/network-deadline";
+
 type OrderEventSource = "capture-route" | "paypal-webhook";
 
 export type OrderEventRecord = {
@@ -83,11 +85,16 @@ export async function logOrderEvent(
 
   const pathname = buildPathname(finalizedRecord);
 
-  await put(pathname, JSON.stringify(finalizedRecord, null, 2), {
-    access: "private",
-    addRandomSuffix: false,
-    contentType: "application/json",
-  });
+  // Optional audit storage yields back to fulfillment even during SDK retry
+  // waits or a stalled transport. safelyLogOrderEvent handles the deadline.
+  await withNetworkDeadline(5_000, (abortSignal) =>
+    put(pathname, JSON.stringify(finalizedRecord, null, 2), {
+      access: "private",
+      abortSignal,
+      addRandomSuffix: false,
+      contentType: "application/json",
+    }),
+  );
 
   return {
     pathname,
