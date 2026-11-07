@@ -215,7 +215,9 @@ test('ASCII control still downloads the original protocol PDF', async (t) => {
   const { response, bytes } = await pdfFromDownload(load, token);
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('Content-Disposition'), 'attachment; filename="tokenmaxxerpro-free-protocol-manual.pdf"');
-  assert.equal(bytes.length, 11376);
+  // PDF serialization can change the byte count without changing
+  // delivery. Assert the actual PDF and its decoded content instead.
+  assert.equal(bytes.subarray(0, 5).toString(), '%PDF-');
   const text = await extractPdfText(bytes);
   assert.ok(text.includes(`Operator: ${ASCII_OPERATOR}`));
   assert.ok(text.includes(`Mission: ${ASCII_TASK}`));

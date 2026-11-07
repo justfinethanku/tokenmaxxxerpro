@@ -192,9 +192,14 @@ function orderPath(orderId: string): string {
   return `/v2/checkout/orders/${orderId}`;
 }
 
-export async function capturePayPalOrder(orderId: string): Promise<PayPalOrder> {
+export async function capturePayPalOrder(
+  orderId: string,
+  requestId?: string,
+): Promise<PayPalOrder> {
   return paypalRequest<PayPalOrder>(`${orderPath(orderId)}/capture`, {
     method: "POST",
+    requestId,
+    headers: { Prefer: "return=representation" },
   });
 }
 
