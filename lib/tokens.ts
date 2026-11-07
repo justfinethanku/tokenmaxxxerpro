@@ -28,6 +28,24 @@ function signValue(value: string): string {
     .digest("base64url");
 }
 
+export function createCaptureRequestId(intent: {
+  operator: string;
+  orderId: string;
+  task: string;
+  tierId: TierId;
+}): string {
+  // A retry must recover this exact fulfillment, not allow a completed payment
+  // to issue a different mission. Domain separation keeps this HMAC distinct
+  // from download signatures; no customer text goes into the provider header.
+  return signValue(JSON.stringify([
+    "paypal-capture-v1",
+    intent.orderId,
+    intent.tierId,
+    intent.task,
+    intent.operator,
+  ])).slice(0, 38);
+}
+
 export function signDownloadToken(payload: DownloadTokenPayload): string {
   const encodedPayload = Buffer.from(JSON.stringify(payload)).toString(
     "base64url",

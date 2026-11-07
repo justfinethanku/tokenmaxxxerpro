@@ -12,7 +12,7 @@ import {
   normalizeOperator,
   normalizeTask,
 } from "@/lib/products";
-import { signDownloadToken } from "@/lib/tokens";
+import { createCaptureRequestId, signDownloadToken } from "@/lib/tokens";
 
 export const runtime = "nodejs";
 
@@ -59,7 +59,15 @@ export async function POST(request: Request) {
 
     const normalizedOperator = normalizeOperator(body.operator ?? "");
     await assertPdfTextSupported(`${normalizedOperator}\n${normalizedTask}`);
-    const capturedOrder = await capturePayPalOrder(body.orderId);
+    // Derive before payment so unusable signing configuration cannot leave a
+    // captured order without a receipt. Normalized inputs survive HTTP retries.
+    const requestId = createCaptureRequestId({
+      operator: normalizedOperator,
+      orderId: body.orderId,
+      task: normalizedTask,
+      tierId: tier.id,
+    });
+    const capturedOrder = await capturePayPalOrder(body.orderId, requestId);
     const capture = assertCapturedPayment(capturedOrder, tier.id);
     const taskSummary = summarizeTask(normalizedTask);
 

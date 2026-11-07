@@ -117,6 +117,12 @@ Download tokens include the mission and operator as base64url JSON, signed with 
 
 Tasks are whitespace-normalized, trimmed and limited to 420 characters; operators are limited to 120. Free issuance requires a normalized task of at least 18 characters. The catalog and prices live in [lib/products.ts](lib/products.ts).
 
+### Capture retries
+
+For captures first attempted with this version, if a capture response is lost, an API caller can retry `POST /api/paypal/capture-order` with the **same order ID, tier, mission and operator**. The server derives a stable HMAC request ID from those normalized values and requests PayPal's full capture representation. A retry can recover the paid download while PayPal retains that request ID; it still checks the current captured status, tier, currency and amount before issuing a link. Supplying a request ID in the JSON body has no effect. Changing the mission, operator or tier uses a different request ID and cannot recover the original capture.
+
+Keep the original inputs and signing secret available during recovery. Secret rotation changes the derived request ID. Do not create and approve a second order merely to recover a missing response: that is a separate payment. Simultaneous attempts may receive a provider conflict; retry the original request after it settles. See [PayPal idempotency](https://developer.paypal.com/api/rest/reference/idempotency/) for provider retention and concurrency limits. The browser does not automatically retry or retain this recovery request across a reload, and there is no durable receipt store or recovery after provider retention expires. These tests use a synthetic provider, not a live payment.
+
 ## Configure PayPal and deployment
 
 For sandbox verification, provision sandbox app credentials, both client IDs, a signing secret, and both environment values as `sandbox` before building. Use a sandbox buyer to check order creation, approval, capture and the resulting PDF. The automated tests cover mocked payment boundaries; this documentation audit did not exercise a real sandbox or live payment.
