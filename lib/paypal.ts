@@ -1,11 +1,23 @@
 import { randomUUID } from "node:crypto";
 
 import { getTierById, type Tier } from "@/lib/products";
+import { withNetworkDeadline } from "@/lib/network-deadline";
 
 const PAYPAL_API_BASE =
   process.env.PAYPAL_ENVIRONMENT === "live"
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
+
+// Each transport owns its deadline through response-body consumption. Aborting
+// a capture does not prove it failed; callers retain the same recovery key.
+const PAYPAL_REQUEST_TIMEOUT_MS = 15_000;
+
+async function fetchPayPalJson<T>(path: string, init: RequestInit) {
+  return withNetworkDeadline(PAYPAL_REQUEST_TIMEOUT_MS, async (signal) => {
+    const response = await fetch(`${PAYPAL_API_BASE}${path}`, { ...init, signal });
+    return { ok: response.ok, json: (await response.json()) as T };
+  });
+}
 
 type PayPalOrder = {
   id: string;
@@ -77,7 +89,10 @@ async function getPayPalAccessToken(): Promise<string> {
     "base64",
   );
 
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+  const { ok, json } = await fetchPayPalJson<{
+    access_token?: string;
+    error_description?: string;
+  }>("/v1/oauth2/token", {
     method: "POST",
     headers: {
       Authorization: `Basic ${basicAuth}`,
@@ -86,12 +101,7 @@ async function getPayPalAccessToken(): Promise<string> {
     body: "grant_type=client_credentials",
   });
 
-  const json = (await response.json()) as {
-    access_token?: string;
-    error_description?: string;
-  };
-
-  if (!response.ok || !json.access_token) {
+  if (!ok || !json.access_token) {
     throw new Error(
       json.error_description ?? "Failed to retrieve PayPal access token.",
     );
@@ -106,7 +116,11 @@ async function paypalRequest<T>(
 ): Promise<T> {
   const accessToken = await getPayPalAccessToken();
 
-  const response = await fetch(`${PAYPAL_API_BASE}${path}`, {
+  const { ok, json } = await fetchPayPalJson<T & {
+    details?: Array<{ description?: string }>;
+    message?: string;
+    name?: string;
+  }>(path, {
     ...init,
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -116,13 +130,7 @@ async function paypalRequest<T>(
     },
   });
 
-  const json = (await response.json()) as T & {
-    details?: Array<{ description?: string }>;
-    message?: string;
-    name?: string;
-  };
-
-  if (!response.ok) {
+  if (!ok) {
     const detailMessage =
       json.details?.[0]?.description ?? json.message ?? json.name;
 
@@ -192,9 +200,14 @@ function orderPath(orderId: string): string {
   return `/v2/checkout/orders/${orderId}`;
 }
 
-export async function capturePayPalOrder(orderId: string): Promise<PayPalOrder> {
+export async function capturePayPalOrder(
+  orderId: string,
+  requestId?: string,
+): Promise<PayPalOrder> {
   return paypalRequest<PayPalOrder>(`${orderPath(orderId)}/capture`, {
     method: "POST",
+    requestId,
+    headers: { Prefer: "return=representation" },
   });
 }
 
