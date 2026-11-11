@@ -22,16 +22,25 @@ const instrumentSans = Instrument_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://tokenmaxxerpro.com"),
-  title: "tokenMAxXxERpro | Protocol Dossiers for Extraordinary Token Burn",
+  title: "TokenMaxxerPro | Enterprise-grade inefficiency",
   description:
-    "Structured PDF dossiers for operators who want ordinary tasks processed with maximum procedural heat.",
+    "Do less. Prompt more. Burn everything. Absurdly serious PDF protocols for turning simple tasks into enterprise-grade token burn.",
+  twitter: { card: "summary_large_image", images: ["/images/social-card.png"] },
   openGraph: {
-    title: "tokenMAxXxERpro",
+    title: "TokenMaxxerPro | Do less. Prompt more.",
     description:
       "Structured protocol dossiers for operators pursuing disciplined, visible, and unnecessary token burn.",
     url: "https://tokenmaxxerpro.com",
     siteName: "tokenMAxXxERpro",
     type: "website",
+    images: [
+      {
+        url: "/images/social-card.png",
+        width: 1200,
+        height: 630,
+        alt: "TokenMaxxerPro: Do less. Prompt more. Burn everything.",
+      },
+    ],
   },
 };
 
